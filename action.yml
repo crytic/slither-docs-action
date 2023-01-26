@@ -1,11 +1,26 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Slither Documentation'
+description: 'Generates documentation for your smart contracts using Slither and OpenAI'
+author: 'Trail of Bits'
 inputs:
-  milliseconds: # change this
+  target:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Project target'
+    default: '.'
+  openai-api-key:
+    required: true
+    description: 'OpenAI API key'
+  trigger-label:
+    description: 'Label used to trigger the workflow. Will be removed once documentation is generated.'
+    default: 'generate-docs'
+  slither-version:
+    description: 'Slither version to install. Defaults to the latest release on PyPI.'
+    default: 'latest'
+  solc-version:
+    description: 'solc compiler version to install. Note that this is only used when target is a standalone Solidity code file or folder.'
+    default: 'none'
+  github-token:
+    description: 'GitHub token, used to compute PR differences and push documentation.'
+    default: ${{ github.token }}
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -1,105 +1,137 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# Document with Slither
 
-# Create a JavaScript Action using TypeScript
+Documenting your code can be tiresome. This action will help you write
+documentation for your code in pull requests using Slither and OpenAI. Just
+label your PR with `generate-docs` and the action will get it done!
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+> **Note**
+>
+> As this action pushes the documentation to the same pull request branch, it
+> only works on pull requests from the same repository. If you trigger the
+> workflow on a pull request originating from a fork, it will display an error.
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+## Usage
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+This action needs to be run on a `pull_request` event of type `labeled`. The
+workflow needs to have `contents: write` permissions (to push documentation
+commits to your PR) and `pull-requests: write` permissions (to untag and leave
+comments on your PR)
 
-## Create an action from this template
+You will also need an OpenAI API key. You can create one in the OpenAI website,
+by clicking on your profile picture, followed by the ["View API
+keys"](https://platform.openai.com/account/api-keys) link.
 
-Click the `Use this Template` and provide the new repo details for your action
+> **Warning**
+>
+> This action will transmit code from your repository to OpenAI during normal
+> operation. Review OpenAI's terms of service and privacy policy to see how your
+> data will be processed, used, or stored.
 
-## Code in Main
+Once you have acquired your API key, store it as an Actions secret for the
+GitHub repository. You may follow the instructions in the [GitHub
+documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository)
+to do so.
 
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
-```
-
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
-
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-## Change action.yml
-
-The action.yml defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
+> **Warning**
+>
+> The OpenAI API is a paid service. The requests that Slither performs to
+> OpenAI's API endpoints cost money. Make sure you trust all the contributors
+> with access to your repository, which may invoke this action with your API
+> key. Configure adequate cost limits and alerts in OpenAI to avoid unexpected
+> bills.
 
 ```yaml
-uses: ./
-with:
-  milliseconds: 1000
+- name: Document with Slither
+  uses: crytic/slither-docs-action@v0
+  with:
+    target: project
+    openai-api-key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
+### Options
 
-## Usage:
+| Key              | Description
+|------------------|------------
+| `target`         | The path to the root of the project to be documented by Slither. It can be a directory or a file, and it defaults to the repo root.
+| `openai-api-key` | The OpenAI API key.
+| `trigger-label`  | The label used to trigger the action. `generate-docs` by default.
+| `slither-version`| The version of slither-analyzer to use. By default, the latest release in PyPI is used.
+| `solc-version`   | The version of `solc` to use. **This only has an effect if you are not using a compilation framework for your project** -- i.e., if `target` is a standalone `.sol` file.
+| `github-token`   | GitHub token, used to compute PR differences and push documentation. By default, it will use the workflow token, and there should be no need to override it.
 
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+## Examples
+
+These examples assume you have a valid OpenAI API key stored as a secret named
+`OPENAI_API_KEY` in your GitHub repository.
+
+### Example: Hardhat
+
+```yaml
+name: Document with Slither
+
+on:
+  pull_request:
+    types: [labeled]
+    branches: [main]
+
+jobs:
+  document:
+    name: Document with Slither
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'generate-docs')
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        working-directory: project
+        run: npm ci
+
+      - name: Document with Slither
+        uses: crytic/slither-docs-action@v0
+        with:
+          target: project
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+```
+
+### Example: Foundry
+
+```yaml
+name: Document with Slither
+
+on:
+  pull_request:
+    types: [labeled]
+    branches: [main]
+
+jobs:
+  document:
+    name: Document with Slither
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'generate-docs')
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Document with Slither
+        uses: crytic/slither-docs-action@v0
+        with:
+          target: project
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+```
