@@ -1,4 +1,4 @@
-name: 'Slither Documentation'
+name: 'Document with Slither'
 description: 'Generates documentation for your smart contracts using Slither and OpenAI'
 author: 'Trail of Bits'
 inputs:
@@ -24,3 +24,6 @@ inputs:
 runs:
   using: 'node16'
   main: 'dist/index.js'
+branding:
+  icon: 'book-open'
+  color: 'red'
