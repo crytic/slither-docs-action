@@ -4,6 +4,11 @@ Documenting your code can be tiresome. This action will help you write
 documentation for your code in pull requests using Slither and OpenAI. Just
 label your PR with `generate-docs` and the action will get it done!
 
+You can see an example repository integrating this action here:
+[crytic/slither-docs-demo](https://github.com/crytic/slither-docs-demo). An
+example [pull request](https://github.com/crytic/slither-docs-demo/pull/2)
+showing the workflow in action is also available on that repository.
+
 > **Note**
 >
 > As this action pushes the documentation to the same pull request branch, it
